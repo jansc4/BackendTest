@@ -23,11 +23,12 @@ class LoginViewModel(
         viewModelScope.launch {
             _loginState.value = LoginState.Loading
             try {
-                val credentials = mapOf(
-                    "email" to email,
-                    "password" to password
+                val response = api.login(
+                    username = email,
+                    password = password
+                    // pozostałe parametry mają wartości domyślne
                 )
-                val response = api.login(credentials)
+
                 UserSession.saveAuthToken(response.access_token, response.refresh_token)
 
                 if (rememberMe) {
@@ -47,6 +48,7 @@ class LoginViewModel(
         }
     }
 }
+
 
 sealed class LoginState {
     object Idle : LoginState()

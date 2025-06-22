@@ -58,10 +58,11 @@ class SignUpViewModel(
                 val response = api.register(request)
 
                 // Po udanej rejestracji automatycznie logujemy
-                val loginResponse = api.login(mapOf(
-                    "email" to email,
-                    "password" to password
-                ))
+                val loginResponse = api.login(
+                    username = email,
+                    password = password
+                    // pozostałe parametry mają wartości domyślne
+                )
 
                 UserSession.saveAuthToken(
                     loginResponse.access_token,

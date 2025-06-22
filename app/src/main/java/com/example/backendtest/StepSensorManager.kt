@@ -11,31 +11,41 @@ import kotlinx.coroutines.flow.asStateFlow
 
 // StepSensorManager.kt
 class StepSensorManager(private val context: Context) {
-    private var sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private var stepSensor: Sensor? = null
-    private var initialSteps = -1
-    private var _currentSteps = MutableStateFlow(0)
-    val currentSteps: StateFlow<Int> = _currentSteps.asStateFlow()
+    private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+
+    private val _steps = MutableStateFlow(0)
+    val steps: StateFlow<Int> = _steps.asStateFlow()
+
+    private var initialSteps: Int? = null
 
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
-            if (initialSteps == -1) {
-                initialSteps = event.values[0].toInt()
+            val totalSteps = event.values[0].toInt()
+
+            if (initialSteps == null) {
+                initialSteps = totalSteps
             }
-            _currentSteps.value = event.values[0].toInt() - initialSteps
+
+            // Oblicz kroki wykonane dzisiaj
+            val currentSteps = totalSteps - (initialSteps ?: totalSteps)
+            _steps.value = currentSteps
         }
 
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-    }
-
-    fun startCounting() {
-        stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-        stepSensor?.let {
-            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Ignorujemy zmiany dokładności
         }
     }
 
-    fun stopCounting() {
+    fun startTracking() {
+        sensorManager.registerListener(
+            sensorEventListener,
+            stepSensor,
+            SensorManager.SENSOR_DELAY_NORMAL
+        )
+    }
+
+    fun stopTracking() {
         sensorManager.unregisterListener(sensorEventListener)
     }
 }

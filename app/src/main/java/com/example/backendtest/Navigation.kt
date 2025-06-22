@@ -12,6 +12,8 @@ import com.example.backendtest.ui.login.LoginViewModel
 import com.example.backendtest.ui.login.LoginViewModelFactory
 import com.example.backendtest.ui.login.LoginScreen
 import com.example.backendtest.ui.main.MainScreen
+import com.example.backendtest.ui.main.MainViewModel
+import com.example.backendtest.ui.main.MainViewModelFactory
 import com.example.backendtest.ui.signup.SignUpScreen
 import com.example.backendtest.ui.signup.SignUpViewModel
 import com.example.backendtest.ui.signup.SignUpViewModelFactory

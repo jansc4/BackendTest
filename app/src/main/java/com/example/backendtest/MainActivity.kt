@@ -27,6 +27,8 @@ class MainActivity : ComponentActivity() {
         // Inicjalizacja managerów
         sharedPreferencesManager = SharedPreferencesManager(applicationContext)
         stepSensorManager = StepSensorManager(applicationContext)
+        stepSensorManager.startTracking()
+
 
         // Inicjalizacja UserSession
         UserSession.init(applicationContext)
@@ -48,7 +50,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        stepSensorManager.stopCounting()
+        stepSensorManager.stopTracking()
+
     }
 }
 
