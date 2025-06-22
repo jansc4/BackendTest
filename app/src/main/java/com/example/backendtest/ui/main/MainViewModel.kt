@@ -9,7 +9,6 @@ import com.example.backendtest.data.network.ApiService
 import com.example.backendtest.data.network.UpdateStepsRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,12 +26,26 @@ class MainViewModel(
     private val _dailySteps = MutableStateFlow(0)
     val dailySteps: StateFlow<Int> = _dailySteps.asStateFlow()
 
-    private val _dailyGoal = MutableStateFlow(10000) // domyślny cel
+    private val _dailyGoal = MutableStateFlow(10000)
     val dailyGoal: StateFlow<Int> = _dailyGoal.asStateFlow()
 
     init {
         loadDailySteps()
         observeSteps()
+    }
+
+    private fun loadDailySteps() {
+        viewModelScope.launch {
+            _stepsState.value = StepsState.Loading
+            try {
+                val response = api.getDailySteps()
+                _dailySteps.value = response.steps ?: 0
+                _dailyGoal.value = response.maxSteps ?: 10000
+                _stepsState.value = StepsState.Success
+            } catch (e: Exception) {
+                _stepsState.value = StepsState.Error("Nie można załadować kroków: ${e.message}")
+            }
+        }
     }
 
     private fun observeSteps() {
@@ -44,40 +57,23 @@ class MainViewModel(
         }
     }
 
-    private fun loadDailySteps() {
-        viewModelScope.launch {
-            _stepsState.value = StepsState.Loading
-            try {
-                val response = api.getDailySteps()
-                _dailySteps.value = response.steps
-                _dailyGoal.value = response.goal
-                _stepsState.value = StepsState.Success
-            } catch (e: Exception) {
-                _stepsState.value = StepsState.Error("Nie można załadować kroków: ${e.message}")
-            }
-        }
-    }
-
     private var lastUpdateJob: Job? = null
     private fun updateStepsToApi(steps: Int) {
-        // Anuluj poprzednie zadanie aktualizacji, jeśli istnieje
         lastUpdateJob?.cancel()
-
-        // Utwórz nowe zadanie aktualizacji
         lastUpdateJob = viewModelScope.launch {
             try {
-                // opóźnienie aby nie wysyłać zbyt wielu requestów
-                delay(5000)
-
-                val request = UpdateStepsRequest(steps = steps)
-                api.updateSteps(request)
+                delay(5000) // opóźnienie dla throttlingu
+                val response = api.updateSteps(UpdateStepsRequest(steps))
+                response.maxSteps?.let { newGoal ->
+                    _dailyGoal.value = newGoal
+                }
             } catch (e: Exception) {
-                // Obsługa błędu aktualizacji
                 _stepsState.value = StepsState.Error("Błąd aktualizacji kroków")
             }
         }
     }
 }
+
 
 sealed class StepsState {
     object Loading : StepsState()

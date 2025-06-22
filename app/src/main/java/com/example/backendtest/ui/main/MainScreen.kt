@@ -45,51 +45,87 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Dzienne kroki",
                 style = MaterialTheme.typography.headlineSmall
             )
-
             IconButton(onClick = onLogout) {
-                Icon(Icons.Default.ExitToApp, "Wyloguj")
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = "Wyloguj"
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Steps Counter
         when (stepsState) {
             is StepsState.Loading -> {
-                CircularProgressIndicator()
+                CircularProgressIndicator(
+                    modifier = Modifier.padding(16.dp)
+                )
             }
             is StepsState.Success -> {
-                // Kroki i cel
-                Text(
-                    text = "$currentSteps",
-                    style = MaterialTheme.typography.displayLarge
-                )
-
-                Text(
-                    text = "z celu $dailyGoal kroków",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-
-                // Progress Bar
-                LinearProgressIndicator(
-                    progress = (currentSteps.toFloat() / dailyGoal).coerceIn(0f, 1f),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
+                StepsDisplay(
+                    currentSteps = currentSteps,
+                    dailyGoal = dailyGoal
                 )
             }
             is StepsState.Error -> {
-                Text(
-                    text = (stepsState as StepsState.Error).message,
-                    color = MaterialTheme.colorScheme.error
-                )
+                ErrorMessage(message = (stepsState as StepsState.Error).message)
             }
         }
     }
+}
+
+@Composable
+fun StepsDisplay(
+    currentSteps: Int,
+    dailyGoal: Int
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Text(
+            text = currentSteps.toString(),
+            style = MaterialTheme.typography.displayLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        Text(
+            text = "z celu $dailyGoal kroków",
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        LinearProgressIndicator(
+            progress = (currentSteps.toFloat() / dailyGoal).coerceIn(0f, 1f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .padding(horizontal = 16.dp),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+
+        Text(
+            text = "${(currentSteps.toFloat() / dailyGoal * 100).toInt()}% celu",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+}
+
+@Composable
+fun ErrorMessage(message: String) {
+    Text(
+        text = message,
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(16.dp)
+    )
 }

@@ -14,6 +14,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.backendtest.SharedPreferencesManager
 import com.example.backendtest.StepSensorManager
+import com.example.backendtest.data.network.RetrofitInstance
+import com.example.backendtest.data.network.RetrofitInstance.api
 import com.example.backendtest.data.network.UserSession
 
 
@@ -61,16 +63,83 @@ fun MainAppContent(
     stepSensorManager: StepSensorManager
 ) {
     val navController = rememberNavController()
+    val scope = rememberCoroutineScope()
+    val api = RetrofitInstance.api
 
-    // Sprawdzanie, czy użytkownik jest zalogowany
     val isUserLoggedIn = remember {
-        mutableStateOf(UserSession.token != null)
+        mutableStateOf(false)
     }
 
-    // Ustawienie początkowego ekranu na podstawie stanu logowania
+    // Funkcja do automatycznego logowania
+    suspend fun tryAutoLogin(): Boolean {
+        return try {
+            if (sharedPreferencesManager.isRememberMeEnabled() && sharedPreferencesManager.hasStoredCredentials()) {
+                val userPreferences = sharedPreferencesManager.getUserPreferences()
+                val response = api.login(
+                    username = userPreferences.email,
+                    password = userPreferences.password
+                )
+                UserSession.saveAuthToken(response.access_token, response.refresh_token)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            sharedPreferencesManager.clearUserPreferences()
+            false
+        }
+    }
+
+    // Funkcja do weryfikacji i odświeżania tokena
+    suspend fun verifyAndRefreshTokenIfNeeded(): Boolean {
+        return try {
+            // Próba wykonania przykładowego zapytania do API aby zweryfikować token
+            api.getDailySteps()
+            true
+        } catch (e: Exception) {
+            // Token wygasł lub jest nieprawidłowy
+            try {
+                // Próba użycia refresh tokena
+                UserSession.refresh_token?.let { refreshToken ->
+                    val response = api.refreshToken(refreshToken)
+                    UserSession.saveAuthToken(response.access_token, response.refresh_token)
+                    return true
+                }
+                // Jeśli nie ma refresh tokena lub refresh się nie powiódł, próbujemy automatycznego logowania
+                if (tryAutoLogin()) {
+                    return true
+                }
+                false
+            } catch (e: Exception) {
+                // Błąd odświeżania tokena lub automatycznego logowania
+                UserSession.clearSession()
+                sharedPreferencesManager.clearUserPreferences()
+                false
+            }
+        }
+    }
+
+    // Sprawdzanie stanu logowania przy starcie
+    LaunchedEffect(Unit) {
+        isUserLoggedIn.value = if (UserSession.token != null) {
+            verifyAndRefreshTokenIfNeeded()
+        } else {
+            tryAutoLogin()
+        }
+    }
+
+    // Nawigacja na podstawie stanu logowania z zabezpieczeniem przed wielokrotną nawigacją
     LaunchedEffect(isUserLoggedIn.value) {
-        if (!isUserLoggedIn.value) {
-            navController.navigate(Route.LoginScreen().name) {
+        val currentRoute = navController.currentBackStackEntry?.destination?.route
+        val targetRoute = if (isUserLoggedIn.value) {
+            Route.MainScreen().name
+        } else {
+            Route.LoginScreen().name
+        }
+
+        // Nawiguj tylko jeśli obecna trasa jest inna niż docelowa
+        if (currentRoute != targetRoute) {
+            navController.navigate(targetRoute) {
                 popUpTo(0)
             }
         }
@@ -82,6 +151,7 @@ fun MainAppContent(
         stepSensorManager = stepSensorManager
     )
 }
+
 
 @Preview(showBackground = true)
 @Composable

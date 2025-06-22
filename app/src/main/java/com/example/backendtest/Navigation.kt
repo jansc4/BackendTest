@@ -95,8 +95,7 @@ fun MyNavigation(
             MainScreen(
                 viewModel = mainViewModel,
                 onLogout = {
-                    UserSession.clearAuthToken()
-                    UserSession.clearAuthRefreshToken()
+                    UserSession.clearSession()
                     navHostController.navigate(Route.LoginScreen().name) {
                         popUpTo(0)
                     }
