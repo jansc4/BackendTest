@@ -7,117 +7,77 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import com.example.backendtest.ui.theme.BackendTestTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.backendtest.data.network.ApiClient
-import com.example.backendtest.data.network.RegisterRequest
+import androidx.navigation.compose.rememberNavController
+import com.example.backendtest.ui.theme.BackendTestTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import com.example.backendtest.SharedPreferencesManager
+import com.example.backendtest.StepSensorManager
+import com.example.backendtest.data.network.UserSession
+
 
 class MainActivity : ComponentActivity() {
+    private lateinit var sharedPreferencesManager: SharedPreferencesManager
+    private lateinit var stepSensorManager: StepSensorManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Inicjalizacja managerów
+        sharedPreferencesManager = SharedPreferencesManager(applicationContext)
+        stepSensorManager = StepSensorManager(applicationContext)
+
+        // Inicjalizacja UserSession
+        UserSession.init(applicationContext)
+
         setContent {
             BackendTestTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    BackendUI()
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    MainAppContent(
+                        sharedPreferencesManager = sharedPreferencesManager,
+                        stepSensorManager = stepSensorManager
+                    )
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stepSensorManager.stopCounting()
     }
 }
 
 @Composable
-fun BackendUI() {
-    val scope = rememberCoroutineScope()
-    var consoleOutput by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+fun MainAppContent(
+    sharedPreferencesManager: SharedPreferencesManager,
+    stepSensorManager: StepSensorManager
+) {
+    val navController = rememberNavController()
 
-    Column(modifier = Modifier.padding(16.dp)) {
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Nazwa użytkownika") },
-            singleLine = true
-        )
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Hasło") },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-        )
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            singleLine = true
-        )
-
-        Button(
-            onClick = {
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val response = ApiClient.api.register(
-                        RegisterRequest(username, email, password)
-                    )
-                    consoleOutput = "Zarejestrowano: ${response.username}, ${response.email}"
-                } catch (e: Exception) {
-                    consoleOutput = "Błąd rejestracji: ${e.message}"
-                }
-            }
-        }) {
-            Text("Zarejestruj")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(onClick = {
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val response = ApiClient.api.login(
-                        mapOf(
-                            "username" to email,
-                            "password" to password
-                        )
-                    )
-                    TokenStore.token = response.access_token
-                    consoleOutput = "Zalogowano. Token: ${response.access_token}"
-                } catch (e: Exception) {
-                    consoleOutput = "Błąd logowania: ${e.message}"
-                }
-            }
-        }) {
-            Text("Zaloguj")
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(onClick = {
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val response = ApiClient.api.getMe("Bearer ${TokenStore.token}")
-                    consoleOutput = "Użytkownik: ${response.username}, ${response.email}"
-                } catch (e: Exception) {
-                    consoleOutput = "Błąd pobierania /me: ${e.message}"
-                }
-            }
-        }) {
-            Text("Pobierz dane użytkownika")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Konsola:", style = MaterialTheme.typography.titleMedium)
-        Text(consoleOutput)
+    // Sprawdzanie, czy użytkownik jest zalogowany
+    val isUserLoggedIn = remember {
+        mutableStateOf(UserSession.token != null)
     }
+
+    // Ustawienie początkowego ekranu na podstawie stanu logowania
+    LaunchedEffect(isUserLoggedIn.value) {
+        if (!isUserLoggedIn.value) {
+            navController.navigate(Route.LoginScreen().name) {
+                popUpTo(0)
+            }
+        }
+    }
+
+    MyNavigation(
+        navHostController = navController,
+        sharedPreferencesManager = sharedPreferencesManager,
+        stepSensorManager = stepSensorManager
+    )
 }
 
 @Preview(showBackground = true)
@@ -125,7 +85,7 @@ fun BackendUI() {
 fun MainPerview(){
     BackendTestTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
-            BackendUI()
+
         }
     }
 }
