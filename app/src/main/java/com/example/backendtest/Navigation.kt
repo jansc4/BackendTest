@@ -11,7 +11,7 @@ import com.example.backendtest.data.network.UserSession
 import com.example.backendtest.ui.login.LoginViewModel
 import com.example.backendtest.ui.login.LoginViewModelFactory
 import com.example.backendtest.ui.login.LoginScreen
-import com.example.backendtest.ui.main.MainScreen
+import com.example.backendtest.ui.main.MainScaffoldScreen
 import com.example.backendtest.ui.main.MainViewModel
 import com.example.backendtest.ui.main.MainViewModelFactory
 import com.example.backendtest.ui.signup.SignUpScreen
@@ -92,15 +92,16 @@ fun MyNavigation(
                 )
             )
 
-            MainScreen(
-                viewModel = mainViewModel,
+            MainScaffoldScreen(
+                navController = navHostController,
                 onLogout = {
                     UserSession.clearAuthToken()
                     UserSession.clearAuthRefreshToken()
                     navHostController.navigate(Route.LoginScreen().name) {
                         popUpTo(0)
                     }
-                }
+                },
+                viewModel = mainViewModel
             )
         }
     }
