@@ -99,7 +99,7 @@ fun ExerciseScreen(
                             FilterChip(
                                 selected = selectedExerciseType == type,
                                 onClick = { onSelectedExerciseTypeChange(type) },
-                                label = { Text(type.name) },
+                                label = { Text(type.displayName) },
                                 modifier = Modifier.padding(end = 8.dp)
                             )
                         }

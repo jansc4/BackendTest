@@ -79,7 +79,7 @@ fun ExerciseForm(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = exerciseType.name,
+                    value = exerciseType.displayName,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Typ ćwiczenia") },
@@ -96,7 +96,7 @@ fun ExerciseForm(
                 ) {
                     ExerciseType.values().forEach { type ->
                         DropdownMenuItem(
-                            text = { Text(type.name) },
+                            text = { Text(type.displayName) },
                             onClick = {
                                 exerciseType = type
                                 expandedExerciseType = false
@@ -114,7 +114,7 @@ fun ExerciseForm(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = difficultyType.name,
+                    value = difficultyType.displayName,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Poziom trudności") },
@@ -131,7 +131,7 @@ fun ExerciseForm(
                 ) {
                     DifficultyType.values().forEach { type ->
                         DropdownMenuItem(
-                            text = { Text(type.name) },
+                            text = { Text(type.displayName) },
                             onClick = {
                                 difficultyType = type
                                 expandedDifficultyType = false
@@ -140,16 +140,6 @@ fun ExerciseForm(
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = video_url,
-                onValueChange = { video_url = it },
-                label = { Text("Link do wideo (opcjonalnie)") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
-            )
 
             Spacer(modifier = Modifier.height(16.dp))
         }

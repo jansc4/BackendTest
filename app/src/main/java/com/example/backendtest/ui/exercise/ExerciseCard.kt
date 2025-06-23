@@ -82,7 +82,7 @@ fun ExerciseCard(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = exercise.exerciseType.name,
+                    text = exercise.exerciseType.displayName,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -95,7 +95,7 @@ fun ExerciseCard(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = exercise.difficulty.name,
+                    text = exercise.difficulty.displayName,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

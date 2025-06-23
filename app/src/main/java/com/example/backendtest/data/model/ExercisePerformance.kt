@@ -14,15 +14,15 @@ data class ExercisePerformance(
     val done: Boolean
 ){
     fun getPerformanceSummary(): String {
-        val numberOfSetsStr = if ( numberOfSets > 1) "$numberOfSets numberOfSets" else "$numberOfSets set"
-        val repsStr = if (numberOfRepetitions > 1) "$numberOfRepetitions numberOfRepetitions" else "$numberOfRepetitions repetition"
-        val weightStr = "$weight kg weight"
+        val numberOfSetsStr = if ( numberOfSets > 1) "$numberOfSets sety" else "$numberOfSets set"
+        val repsStr = if (numberOfRepetitions > 1) "$numberOfRepetitions powtórzenia" else "$numberOfRepetitions powtórzenie"
+        val weightStr = "$weight kg"
 
         return when {
-            numberOfSets > 0 && numberOfRepetitions > 0 && weight > 0 -> "$numberOfSetsStr numberOfSets of $repsStr numberOfRepetitions with $weightStr"
-            numberOfSets > 0 && numberOfRepetitions > 0 && weight == 0.0 -> "$numberOfSetsStr numberOfSets of $repsStr numberOfRepetitions" // No weight
-            numberOfSets == 0 && numberOfRepetitions > 0 -> "$repsStr numberOfRepetitions" // if only reps present
-            numberOfSets > 0 && numberOfRepetitions == 0 -> "$numberOfSetsStr numberOfSets" // if only numberOfSets present
+            numberOfSets > 0 && numberOfRepetitions > 0 && weight > 0 -> "$numberOfSetsStr po $repsStr z obciążeniem $weightStr"
+            numberOfSets > 0 && numberOfRepetitions > 0 && weight == 0.0 -> "$numberOfSetsStr po $repsStr" // No weight
+            numberOfSets == 0 && numberOfRepetitions > 0 -> "$repsStr" // if only reps present
+            numberOfSets > 0 && numberOfRepetitions == 0 -> "$numberOfSetsStr" // if only numberOfSets present
             else -> "" // Fallback to original description if no structured data
         }
     }
