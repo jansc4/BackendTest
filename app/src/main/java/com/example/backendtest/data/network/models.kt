@@ -15,6 +15,10 @@ data class UpdateStepsRequest(
     val steps: Int
 )
 
+data class UpdateStepsGoalRequest(
+    val maxSteps: Int
+)
+
 data class UpdateStepsResponse(
     val steps: Int?,
     val maxSteps: Int?

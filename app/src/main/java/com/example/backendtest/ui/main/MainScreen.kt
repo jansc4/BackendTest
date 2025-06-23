@@ -10,15 +10,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -27,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.nativeCanvas
@@ -45,14 +54,15 @@ fun MainScreen(
     val stepsState by viewModel.stepsState.collectAsState()
     val currentSteps by viewModel.dailySteps.collectAsState()
     val dailyGoal by viewModel.dailyGoal.collectAsState()
-    val history by viewModel.stepsHistory.collectAsState()
     val stepsHistoryState by viewModel.stepsHistoryState.collectAsState()
 
+    var showGoalSetter by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Top Bar
@@ -67,67 +77,71 @@ fun MainScreen(
                 text = "Dzienne kroki",
                 style = MaterialTheme.typography.headlineSmall
             )
-            IconButton(onClick = onLogout) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Wyloguj"
-                )
+            Row {
+                // Przycisk do ustawiania celu
+                TextButton(onClick = { showGoalSetter = true }) {
+                    Text("Ustaw cel")
+                }
+                // Przycisk wylogowania
+                IconButton(onClick = onLogout) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Wyloguj"
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        when (stepsState) {
-            is StepsState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.padding(16.dp)
-                )
+        if (showGoalSetter) {
+            DailyGoalSetter(
+                currentGoal = dailyGoal,
+                onGoalChange = { newGoal ->
+                    viewModel.setDailyGoal(newGoal)
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { showGoalSetter = false }) {
+                Text("Zamknij")
             }
-            is StepsState.Success -> {
-                StepsDisplay(
-                    currentSteps = currentSteps,
-                    dailyGoal = dailyGoal
-                )
+        } else {
+            when (stepsState) {
+                is StepsState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+                is StepsState.Success -> {
+                    StepsDisplay(
+                        currentSteps = currentSteps,
+                        dailyGoal = dailyGoal
+                    )
+                }
+                is StepsState.Error -> {
+                    ErrorMessage(message = (stepsState as StepsState.Error).message)
+                }
             }
-            is StepsState.Error -> {
-                ErrorMessage(message = (stepsState as StepsState.Error).message)
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        when (stepsHistoryState) {
-            is StepsHistoryState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-            }
-            is StepsHistoryState.Error -> {
-                ErrorMessage(message = (stepsHistoryState as StepsHistoryState.Error).message)
-            }
-            is StepsHistoryState.Success -> {
-                val history = (stepsHistoryState as StepsHistoryState.Success).history
-                StepsChart(stepsHistory = history)
-
-                // obliczenia pod wykresem
-                val total = history.sumOf { it.steps }
-                val average = if (history.isNotEmpty()) total / history.size else 0
-                val max = history.maxOfOrNull { it.steps } ?: 0
-                val min = history.minOfOrNull { it.steps } ?: 0
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Średnia: $average   Min: $min   Max: $max",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp)
-                        .fillMaxWidth()
-                )
+            when (stepsHistoryState) {
+                is StepsHistoryState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                }
+                is StepsHistoryState.Error -> {
+                    ErrorMessage(message = (stepsHistoryState as StepsHistoryState.Error).message)
+                }
+                is StepsHistoryState.Success -> {
+                    val history = (stepsHistoryState as StepsHistoryState.Success).history
+                    StepsChart(stepsHistory = history)
+                    StepsStatistics(history = history)
+                }
             }
         }
-
     }
 }
+
 
 @Composable
 fun StepsDisplay(
@@ -232,6 +246,73 @@ fun StepsChart(stepsHistory: List<StepHistoryEntry>) {
         }
     }
 }
+
+@Composable
+fun StepsStatistics(history: List<StepHistoryEntry>) {
+    val total = history.sumOf { it.steps }
+    val average = if (history.isNotEmpty()) total / history.size else 0
+    val max = history.maxOfOrNull { it.steps } ?: 0
+    val min = history.minOfOrNull { it.steps } ?: 0
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text("Statystyki z ostatnich 7 dni", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            StatCard("Średnia", "$average")
+            StatCard("Maks.", "$max")
+            StatCard("Min.", "$min")
+        }
+    }
+}
+
+@Composable
+fun StatCard(label: String, value: String) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 4.dp),
+        elevation = CardDefaults.cardElevation()
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(value, style = MaterialTheme.typography.titleLarge)
+            Text(label, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+fun DailyGoalSetter(
+    currentGoal: Int,
+    onGoalChange: (Int) -> Unit
+) {
+    var input by remember { mutableStateOf(currentGoal.toString()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text("Ustaw dzienny cel", style = MaterialTheme.typography.titleMedium)
+        OutlinedTextField(
+            value = input,
+            onValueChange = {
+                input = it
+                it.toIntOrNull()?.let(onGoalChange)
+            },
+            label = { Text("Cel kroków") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+    }
+}
+
 
 @Composable
 fun ErrorMessage(message: String) {
