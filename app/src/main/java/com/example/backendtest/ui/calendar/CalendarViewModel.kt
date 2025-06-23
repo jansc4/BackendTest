@@ -45,6 +45,7 @@ class CalendarViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
+        println("✅ CalendarViewModel initialized!")
         fetchExercises()
         fetchCalendarEntriesForDate(_selectedDate.value)
     }
@@ -71,8 +72,7 @@ class CalendarViewModel(
                 println("Response received: $response")
                 response
             }.onSuccess { response ->
-                _calendarEntries.value = response.flatMap { day ->
-                    day.exercises.map { ep ->
+                _calendarEntries.value = response.exercises.map { ep ->
                         ExercisePerformance(
                             id = ep.id ?: "",
                             exercise_id = ep.exercise_id,
@@ -84,78 +84,13 @@ class CalendarViewModel(
                             notes = ep.notes,
                             done = ep.done
                         )
-                    }
                 }
             }.onFailure {
+                if (it.message.equals("HTTP 404 Not Found") ){
+                    _calendarEntries.value = emptyList()
+                }
                 println("Błąd pobierania wpisów kalendarza: ${it.message}")
-            }
-        }
-    }
-
-    // Dodaj ćwiczenie (dla UI bez daty)
-    fun addExerciseToCalendar(data: ExercisePerformanceData) {
-        addExerciseToCalendar(data, _selectedDate.value)
-    }
-
-    fun addExerciseToCalendar(data: ExercisePerformanceData, date: LocalDate) {
-        viewModelScope.launch {
-            runCatching {
-                val token = UserSession.token ?: throw Exception("Brak tokena")
-                val request = ExercisePerformanceRequest(date, listOf(data))
-                api.addCalendarDay("Bearer $token", request)
-            }.onSuccess {
-                fetchCalendarEntriesForDate(date)
-                closeAddDialog()
-            }.onFailure {
-                println("Błąd dodawania ćwiczenia: ${it.message}")
-            }
-        }
-    }
-
-    fun deleteExerciseFromCalendar(performance: ExercisePerformance) {
-        viewModelScope.launch {
-            runCatching {
-                val token = UserSession.token ?: throw Exception("Brak tokena")
-                api.deleteCalendarEntryById("Bearer $token", performance.id)
-            }.onSuccess {
-                fetchCalendarEntriesForDate(_selectedDate.value)
-            }.onFailure {
-                println("Błąd usuwania ćwiczenia: ${it.message}")
-            }
-        }
-    }
-
-    fun toggleDoneStatus(performance: ExercisePerformanceDisplay, isDone: Boolean) {
-        viewModelScope.launch {
-            runCatching {
-                val token = UserSession.token ?: throw Exception("Brak tokena")
-                val date = _selectedDate.value
-
-                // Pobierz aktualne dane kalendarza na dany dzień
-                val dayResponses = api.getCalendarEntryByDate("Bearer $token", date)
-
-                val currentDay = dayResponses.firstOrNull()
-                    ?: throw Exception("Brak danych kalendarza dla daty $date")
-                //Zmien status wybranego wykonania cwiczenia
-                val updatedExercises = currentDay.exercises.map { ep ->
-                    if (ep.id == performance.id) {
-                        ep.copy(done = isDone)
-                    } else {
-                        ep
-                    }
-                }
-
-                val request = ExercisePerformanceRequest(
-                    date = date,
-                    exercises = updatedExercises
-                )
-
-                // Aktualizacja całego dnia
-                api.updateCalendarById("Bearer $token", request, currentDay.id)
-            }.onSuccess {
-                fetchCalendarEntriesForDate(_selectedDate.value)
-            }.onFailure {
-                println("Błąd zmiany statusu ćwiczenia: ${it.message}")
+                it.printStackTrace()
             }
         }
     }
@@ -189,5 +124,118 @@ class CalendarViewModel(
 
     fun selectExerciseForNewPerformance(exerciseId: String) {
         _newPerformanceExerciseId.value = exerciseId
+    }
+
+    fun addExerciseToCalendar(data: ExercisePerformanceData, date: LocalDate) {
+        viewModelScope.launch {
+            runCatching {
+                val token = UserSession.token ?: throw Exception("Brak tokena")
+                val calendarDay = api.getCalendarEntryByDate("Bearer $token", date)
+                if (calendarDay.exercises.isEmpty()) {
+                    // Nie ma wpisu na ten dzień - dodaj cały dzień
+                    val request = ExercisePerformanceRequest(date, listOf(data))
+                    api.addCalendarDay("Bearer $token", request)
+                } else {
+                    // Istnieje dzień - dodaj ćwiczenie do istniejącego wpisu
+                    val calendarDayId = calendarDay.id
+                    api.addExerciseToCalendarEntryByCalendarId("Bearer $token", data, calendarDayId)
+                }
+            }.onSuccess {
+                fetchCalendarEntriesForDate(date)
+                closeAddDialog()
+            }.onFailure {
+                println("Błąd dodawania ćwiczenia: ${it.message}")
+            }
+        }
+    }
+
+    fun deleteExerciseFromCalendar(performance: ExercisePerformance) {
+        viewModelScope.launch {
+            runCatching {
+                val token = UserSession.token ?: throw Exception("Brak tokena")
+                val date = _selectedDate.value
+                val calendarDay = api.getCalendarEntryByDate("Bearer $token", date)
+                api.deleteExerciseFromCalendarEntryByCalendarId("Bearer $token", calendarDay.id, performance.id)
+            }.onSuccess {
+                fetchCalendarEntriesForDate(_selectedDate.value)
+            }.onFailure {
+                println("Błąd usuwania ćwiczenia: ${it.message}")
+            }
+        }
+    }
+
+    fun updateExercisePerformance(data: ExercisePerformanceData, date: LocalDate) {
+        viewModelScope.launch {
+            runCatching {
+                val token = UserSession.token ?: throw Exception("Brak tokena")
+                val calendarDay = api.getCalendarEntryByDate("Bearer $token", date)
+                val calendarDayId = calendarDay.id
+                data.id?.let { exerciseId ->
+                    api.updateExerciseInCalendarEntryByCalendarId("Bearer $token", data, calendarDayId, exerciseId)
+                } ?: throw Exception("Brak id ćwiczenia do aktualizacji")
+            }.onSuccess {
+                fetchCalendarEntriesForDate(date)
+                closeAddDialog()
+                clearSelectedExercise()
+            }.onFailure {
+                println("Błąd aktualizacji ćwiczenia: ${it.message}")
+            }
+        }
+    }
+
+    fun toggleDoneStatus(performance: ExercisePerformanceDisplay, isDone: Boolean) {
+        viewModelScope.launch {
+            println("toggleDone for perf.id=${performance.id}, new done=$isDone")
+            runCatching {
+                val token = UserSession.token ?: throw Exception("Brak tokena")
+                val date = _selectedDate.value
+                println("Current date: $date")
+
+                val calendarDay = api.getCalendarEntryByDate("Bearer $token", date)
+                val calendarDayId = calendarDay.id
+                println("calendarDay.id=${calendarDay.id}, exercises before: ${calendarDay.exercises.map { it.done }}\")")
+
+                val perf = performance.performance
+                val updatedData = ExercisePerformanceData(
+                    id = perf.id,
+                    exercise_id = perf.exercise_id,
+                    duration_min = perf.duration_min,
+                    numberOfSets = perf.numberOfSets,
+                    numberOfRepetitions = perf.numberOfRepetitions,
+                    weight = perf.weight,
+                    intervalBetween_days = perf.intervalBetween_days,
+                    notes = perf.notes,
+                    done = isDone
+                )
+
+                val updatedPerf = api.updateExerciseInCalendarEntryByCalendarId(
+                    authHeader = "Bearer $token",
+                    body = updatedData,
+                    id = calendarDayId,
+                    exerciseId = perf.id
+                )
+                println("Updated perf: id=${updatedPerf.id}, done=${updatedPerf.done}")
+            }.onSuccess {
+                println("Refreshing list for new date")
+                fetchCalendarEntriesForDate(_selectedDate.value)
+            }.onFailure {
+                println("Błąd zmiany statusu ćwiczenia: ${it.message}")
+                it.printStackTrace()
+            }
+        }
+    }
+
+
+    fun deleteExercisePerformance(performance: ExercisePerformance) {
+        viewModelScope.launch {
+            runCatching {
+                val token = UserSession.token ?: throw Exception("Brak tokena")
+                api.deleteCalendarEntryByCalendarId("Bearer $token", performance.id)
+            }.onSuccess {
+                fetchCalendarEntriesForDate(_selectedDate.value)
+            }.onFailure {
+                println("Błąd usuwania wpisu kalendarza: ${it.message}")
+            }
+        }
     }
 }

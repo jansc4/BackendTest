@@ -20,8 +20,13 @@ fun CalendarScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val performances by viewModel.performancesWithNames.collectAsState()
     val selectedExercise by viewModel.selectedExercisePerformance.collectAsState()
-    var isAddingExercise by remember { mutableStateOf(false) }
-
+    val showAddDialog by viewModel.showAddDialog.collectAsState()
+    LaunchedEffect(performances) {
+        println("performancesWithNames size: ${performances.size}")
+        performances.forEach {
+            println("${it.exerciseName}, done: ${it.performance.done}")
+        }
+    }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             DateNavigationBar(
@@ -57,7 +62,7 @@ fun CalendarScreen(
 
         // FAB to add a new exercise
         FloatingActionButton(
-            onClick = { isAddingExercise = true },
+            onClick = { viewModel.openAddDialog() },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp)
@@ -65,20 +70,17 @@ fun CalendarScreen(
             Icon(Icons.Filled.Add, contentDescription = "Dodaj ćwiczenie")
         }
 
-        // Dialog for adding a new exercise
-        if (isAddingExercise) {
-            Dialog(onDismissRequest = { isAddingExercise = false }) {
+        // Dialog for adding/editing exercise performance
+        if (showAddDialog) {
+            Dialog(onDismissRequest = { viewModel.closeAddDialog() }) {
                 Surface(
                     shape = MaterialTheme.shapes.medium,
-                    tonalElevation = 8.dp
+                    tonalElevation = 8.dp,
+                    modifier = Modifier.padding(16.dp)
                 ) {
                     CalendarExercisePerformanceForm(
-                        exercisePerformance = null,
-                        onSave = { data ->
-                            viewModel.addExerciseToCalendar(data)
-                            isAddingExercise = false
-                        },
-                        onCancel = { isAddingExercise = false }
+                        viewModel = viewModel,
+                        onDismiss = { viewModel.closeAddDialog() }
                     )
                 }
             }
@@ -89,8 +91,14 @@ fun CalendarScreen(
             ExerciseDetailsDialog(
                 exercise = it,
                 onDismiss = { viewModel.clearSelectedExercise() },
-                onEdit = { /* TODO */ },
-                onDelete = { viewModel.deleteExerciseFromCalendar(it) }
+                onEdit = {
+                    // Otwórz formularz edycji
+                    viewModel.openAddDialog()
+                },
+                onDelete = {
+                    viewModel.deleteExerciseFromCalendar(it)
+                    viewModel.clearSelectedExercise()
+                }
             )
         }
     }

@@ -66,7 +66,7 @@ fun ExerciseDetailsDialogPreview() {
                     duration_min = 45,
                     numberOfSets = 4,
                     numberOfRepetitions = 10,
-                    weight = 60,
+                    weight = 60.0,
                     intervalBetween_days = 2,
                     notes = "Focus on form",
                     done = true

@@ -68,13 +68,13 @@ interface ApiService {
     suspend fun getAllCalendarEntries(@Header("Authorization") authHeader: String):List<CalendarDayResponse>
 
     @GET("calendar/{id}")
-    suspend fun getCalendarEntryById(@Header("Authorization") authHeader: String, @Path("id") id: String):List<CalendarDayResponse>
+    suspend fun getCalendarEntryById(@Header("Authorization") authHeader: String, @Path("id") id: String):CalendarDayResponse
 
     @GET("calendar/date/{date}")
     suspend fun getCalendarEntryByDate(
         @Header("Authorization") authHeader: String,
         @Path("date") date: LocalDate
-    ): List<CalendarDayResponse>
+    ): CalendarDayResponse
 
     @POST("calendar")
     suspend fun addCalendarDay(
@@ -86,23 +86,23 @@ interface ApiService {
     suspend fun updateCalendarById(@Header("Authorization") authHeader: String, @Body body: ExercisePerformanceRequest, @Path("calendar_id") id: String):CalendarDayResponse
 
     @DELETE("calendar/{id}")
-    suspend fun deleteCalendarEntryById(@Header("Authorization") authHeader: String, @Path("id") id: String):Result<Void>
+    suspend fun deleteCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Path("id") id: String):Result<Void>
 
     //calendar/exercisePerformance
     @PUT("/calendar/{calendar_id}/exercise/{exercise_id}")
-    suspend fun updateCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Body body: ExercisePerformanceData, @Path("calendar_id") id: String, @Path("exercise_id") exerciseId: String):ExercisePerformance
+    suspend fun updateExerciseInCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Body body: ExercisePerformanceData, @Path("calendar_id") id: String, @Path("exercise_id") exerciseId: String):ExercisePerformance
 
     @POST("/calendar/{calendar_id}/exercise")
-    suspend fun addCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Body body: ExercisePerformanceData, @Path("calendar_id") id: String):ExercisePerformance
+    suspend fun addExerciseToCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Body body: ExercisePerformanceData, @Path("calendar_id") id: String):ExercisePerformance
 
     @DELETE("/calendar/{calendar_id}/exercise/{exercise_id}")
-    suspend fun addCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Path("calendar_id") id: String, @Path("exercise_id") exerciseId: String):Result<Void>
+    suspend fun deleteExerciseFromCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Path("calendar_id") id: String, @Path("exercise_id") exerciseId: String):Response<Void>
 
     //steps
     @GET("/steps/today")
     suspend fun getStepsForToday(@Header("Authorization") authHeader: String):Steps
 
     @PUT("/steps/today")
-    suspend fun getStepsForToday(@Header("Authorization") authHeader: String, @Body body: Steps,):Steps
+    suspend fun getStepsForToday(@Header("Authorization") authHeader: String, @Body body: Steps):Steps
 
 }

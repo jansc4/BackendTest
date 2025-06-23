@@ -8,7 +8,7 @@ data class ExercisePerformance(
     var duration_min: Int,
     var numberOfSets: Int,
     var numberOfRepetitions: Int,
-    var weight: Int,
+    var weight: Double,
     val intervalBetween_days: Int,
     val notes: String,
     val done: Boolean
@@ -20,7 +20,7 @@ data class ExercisePerformance(
 
         return when {
             numberOfSets > 0 && numberOfRepetitions > 0 && weight > 0 -> "$numberOfSetsStr numberOfSets of $repsStr numberOfRepetitions with $weightStr"
-            numberOfSets > 0 && numberOfRepetitions > 0 && weight == 0 -> "$numberOfSetsStr numberOfSets of $repsStr numberOfRepetitions" // No weight
+            numberOfSets > 0 && numberOfRepetitions > 0 && weight == 0.0 -> "$numberOfSetsStr numberOfSets of $repsStr numberOfRepetitions" // No weight
             numberOfSets == 0 && numberOfRepetitions > 0 -> "$repsStr numberOfRepetitions" // if only reps present
             numberOfSets > 0 && numberOfRepetitions == 0 -> "$numberOfSetsStr numberOfSets" // if only numberOfSets present
             else -> "" // Fallback to original description if no structured data
@@ -36,7 +36,7 @@ data class ExercisePerformanceData(
     var duration_min: Int,
     var numberOfSets: Int,
     var numberOfRepetitions: Int,
-    var weight: Int,
+    var weight: Double,
     val intervalBetween_days: Int,
     val notes: String,
     val done: Boolean

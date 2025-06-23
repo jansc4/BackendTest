@@ -1,6 +1,5 @@
 package com.example.backendtest.ui.main
 
-import CalendarScreen
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -15,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.backendtest.BottomNavItem
+import com.example.backendtest.ui.calendar.CalendarScreen
 import com.example.backendtest.ui.exercise.ExerciseScreen
 
 @Composable
