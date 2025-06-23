@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
         // Inicjalizacja managerów
         sharedPreferencesManager = SharedPreferencesManager(applicationContext)
         stepSensorManager = StepSensorManager(applicationContext)
+
         stepSensorManager.startTracking()
 
 

@@ -57,4 +57,20 @@ class SharedPreferencesManager(private val context: Context) {
         val password = prefs.getString(KEY_PASSWORD, "") ?: ""
         return email.isNotEmpty() && password.isNotEmpty()
     }
+
+    fun putString(key: String, value: String) {
+        prefs.edit().putString(key, value).apply()
+    }
+
+    fun getString(key: String): String? {
+        return prefs.getString(key, null)
+    }
+
+    fun putInt(key: String, value: Int) {
+        prefs.edit().putInt(key, value).apply()
+    }
+
+    fun getInt(key: String, defaultValue: Int): Int {
+        return prefs.getInt(key, defaultValue)
+    }
 }

@@ -5,47 +5,54 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-// StepSensorManager.kt
-class StepSensorManager(private val context: Context) {
+class StepSensorManager(
+    private val context: Context
+) {
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+    private val stepDetectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
 
     private val _steps = MutableStateFlow(0)
     val steps: StateFlow<Int> = _steps.asStateFlow()
 
-    private var initialSteps: Int? = null
+    private var manualSteps = 0
 
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
-            val totalSteps = event.values[0].toInt()
-
-            if (initialSteps == null) {
-                initialSteps = totalSteps
+            if (event.sensor.type == Sensor.TYPE_STEP_DETECTOR) {
+                manualSteps++
+                _steps.value = manualSteps
+                Log.d("StepSensor", "Step detected, total = $manualSteps")
             }
-
-            // Oblicz kroki wykonane dzisiaj
-            val currentSteps = totalSteps - (initialSteps ?: totalSteps)
-            _steps.value = currentSteps
         }
 
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-            // Ignorujemy zmiany dokładności
-        }
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
     }
 
     fun startTracking() {
-        sensorManager.registerListener(
-            sensorEventListener,
-            stepSensor,
-            SensorManager.SENSOR_DELAY_NORMAL
-        )
+        if (stepDetectorSensor != null) {
+            sensorManager.registerListener(
+                sensorEventListener,
+                stepDetectorSensor,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        } else {
+            Log.e("StepSensor", "TYPE_STEP_DETECTOR not available")
+        }
     }
 
     fun stopTracking() {
         sensorManager.unregisterListener(sensorEventListener)
+    }
+
+    fun getManualSteps(): Int {
+        return manualSteps
     }
 }

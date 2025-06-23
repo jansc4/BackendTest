@@ -1,5 +1,6 @@
 package com.example.backendtest.ui.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -29,17 +30,22 @@ class MainViewModel(
     private val _dailyGoal = MutableStateFlow(10000)
     val dailyGoal: StateFlow<Int> = _dailyGoal.asStateFlow()
 
+    private var initialStepsFromApi: Int = 0
+
+    private var pendingSteps: Int? = null
+
     init {
         loadDailySteps()
         observeSteps()
+        startPeriodicUpdateJob()
     }
-
     private fun loadDailySteps() {
         viewModelScope.launch {
             _stepsState.value = StepsState.Loading
             try {
                 val response = api.getDailySteps()
-                _dailySteps.value = response.steps ?: 0
+                initialStepsFromApi = response.steps ?: 0
+                _dailySteps.value = initialStepsFromApi
                 _dailyGoal.value = response.maxSteps ?: 10000
                 _stepsState.value = StepsState.Success
             } catch (e: Exception) {
@@ -48,30 +54,39 @@ class MainViewModel(
         }
     }
 
-    private fun observeSteps() {
+    private fun startPeriodicUpdateJob() {
         viewModelScope.launch {
-            stepSensorManager.steps.collect { steps ->
-                _dailySteps.value = steps
-                updateStepsToApi(steps)
+            while (true) {
+                delay(5000) // aktualizacja co 5 sekund
+
+                pendingSteps?.let { steps ->
+                    try {
+                        val response = api.updateSteps(UpdateStepsRequest(steps))
+                        response.maxSteps?.let {
+                            _dailyGoal.value = it
+                        }
+                        Log.d("MainViewModel", "Zaktualizowano kroki: $steps")
+                        pendingSteps = null // wyczyść po sukcesie
+                    } catch (e: Exception) {
+                        Log.e("MainViewModel", "Błąd aktualizacji kroków", e)
+                    }
+                }
             }
         }
     }
 
-    private var lastUpdateJob: Job? = null
-    private fun updateStepsToApi(steps: Int) {
-        lastUpdateJob?.cancel()
-        lastUpdateJob = viewModelScope.launch {
-            try {
-                delay(5000) // opóźnienie dla throttlingu
-                val response = api.updateSteps(UpdateStepsRequest(steps))
-                response.maxSteps?.let { newGoal ->
-                    _dailyGoal.value = newGoal
+    private fun observeSteps() {
+        viewModelScope.launch {
+            stepSensorManager.steps.collect { additionalSteps ->
+                val totalSteps = initialStepsFromApi + additionalSteps
+                if (totalSteps > _dailySteps.value) {
+                    _dailySteps.value = totalSteps
+                    pendingSteps = totalSteps
                 }
-            } catch (e: Exception) {
-                _stepsState.value = StepsState.Error("Błąd aktualizacji kroków")
             }
         }
     }
+
 }
 
 
