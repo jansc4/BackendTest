@@ -27,6 +27,12 @@ data class ExercisePerformance(
         }
     }
 
+    fun toExercisePerformanceDisplay(exerciseName: String):ExercisePerformanceDisplay{
+        return ExercisePerformanceDisplay(
+            exerciseName = exerciseName,
+            performance = this
+        )
+    }
 }
 
 

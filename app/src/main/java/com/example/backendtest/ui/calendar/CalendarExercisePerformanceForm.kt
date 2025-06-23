@@ -29,14 +29,15 @@ fun CalendarExercisePerformanceForm(
     val exerciseList by viewModel.exerciseList.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
 
-    var selectedExerciseId by remember { mutableStateOf(exercisePerformance?.exercise_id ?: viewModel.newPerformanceExerciseId.value ?: "") }
-    var durationMin by remember { mutableStateOf(exercisePerformance?.duration_min?.toString() ?: "") }
-    var numberOfSets by remember { mutableStateOf(exercisePerformance?.numberOfSets?.toString() ?: "") }
-    var numberOfRepetitions by remember { mutableStateOf(exercisePerformance?.numberOfRepetitions?.toString() ?: "") }
-    var weight by remember { mutableStateOf(exercisePerformance?.weight?.toString() ?: "") }
-    var intervalDays by remember { mutableStateOf(exercisePerformance?.intervalBetween_days?.toString() ?: "") }
-    var notes by remember { mutableStateOf(exercisePerformance?.notes ?: "") }
-    var done by remember { mutableStateOf(exercisePerformance?.done ?: false) }
+    var selectedExerciseId by remember { mutableStateOf(
+        exercisePerformance?.performance?.exercise_id ?: viewModel.newPerformanceExerciseId.value ?: "") }
+    var durationMin by remember { mutableStateOf(exercisePerformance?.performance?.duration_min?.toString() ?: "") }
+    var numberOfSets by remember { mutableStateOf(exercisePerformance?.performance?.numberOfSets?.toString() ?: "") }
+    var numberOfRepetitions by remember { mutableStateOf(exercisePerformance?.performance?.numberOfRepetitions?.toString() ?: "") }
+    var weight by remember { mutableStateOf(exercisePerformance?.performance?.weight?.toString() ?: "") }
+    var intervalDays by remember { mutableStateOf(exercisePerformance?.performance?.intervalBetween_days?.toString() ?: "") }
+    var notes by remember { mutableStateOf(exercisePerformance?.performance?.notes ?: "") }
+    var done by remember { mutableStateOf(exercisePerformance?.performance?.done ?: false) }
 
     var expanded by remember { mutableStateOf(false) }
     val selectedExerciseName = exerciseList.find { it.id == selectedExerciseId }?.name ?: "Wybierz ćwiczenie"

@@ -96,7 +96,7 @@ fun CalendarScreen(
                     viewModel.openAddDialog()
                 },
                 onDelete = {
-                    viewModel.deleteExerciseFromCalendar(it)
+                    viewModel.deleteExerciseFromCalendar(it.performance)
                     viewModel.clearSelectedExercise()
                 }
             )

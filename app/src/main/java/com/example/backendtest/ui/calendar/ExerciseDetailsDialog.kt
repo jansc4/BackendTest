@@ -8,46 +8,47 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.backendtest.data.model.ExercisePerformanceDisplay
 
 @Composable
 fun ExerciseDetailsDialog(
-    exercise: ExercisePerformance,
+    exercise: ExercisePerformanceDisplay,
     onDismiss: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = "Exercise Details") },
+        title = { Text(text = "Szczegóły ćwiczenia") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Exercise ID: ${exercise.exercise_id}", fontWeight = FontWeight.Bold)
+                Text(text = exercise.exerciseName, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Text(text = "Duration: ${exercise.duration_min} min")
+                Text(text = "Czas trwania: ${exercise.performance.duration_min} min")
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(text = "Interval between: ${exercise.intervalBetween_days} days")
+                Text(text = "Powtarzanie: ${exercise.performance.intervalBetween_days} dni")
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(text = "Notes: ${exercise.notes}")
+                Text(text = "Notatki: ${exercise.performance.notes}")
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Text(text = "Completed: ${if (exercise.done) "Yes" else "No"}")
+                Text(text = "Wykonano: ${if (exercise.performance.done) "Tak" else "Nie"}")
             }
         },
         confirmButton = {
             Row(modifier = Modifier.padding(bottom = 8.dp)) {
                 TextButton(onClick = onEdit) {
-                    Text("Edit")
+                    Text("Edytuj")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDelete) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text("Usuń", color = MaterialTheme.colorScheme.error)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = onDismiss) {
-                    Text("Close")
+                    Text("Zamknij")
                 }
             }
         }
@@ -60,7 +61,9 @@ fun ExerciseDetailsDialogPreview() {
     MaterialTheme {
         Surface {
             ExerciseDetailsDialog(
-                exercise = ExercisePerformance(
+                exercise = ExercisePerformanceDisplay(
+                    exerciseName = "martwy ciąg",
+                    performance = ExercisePerformance(
                     id = "1",
                     exercise_id = "123",
                     duration_min = 45,
@@ -70,7 +73,7 @@ fun ExerciseDetailsDialogPreview() {
                     intervalBetween_days = 2,
                     notes = "Focus on form",
                     done = true
-                ),
+                )),
                 onDismiss = {},
                 onEdit = {},
                 onDelete = {}

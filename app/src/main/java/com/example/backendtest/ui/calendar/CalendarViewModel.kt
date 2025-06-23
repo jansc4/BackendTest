@@ -24,8 +24,8 @@ class CalendarViewModel(
     private val _selectedDate = MutableStateFlow(LocalDate.now())
     val selectedDate: StateFlow<LocalDate> = _selectedDate.asStateFlow()
 
-    private val _selectedExercisePerformance = MutableStateFlow<ExercisePerformance?>(null)
-    val selectedExercisePerformance: StateFlow<ExercisePerformance?> = _selectedExercisePerformance.asStateFlow()
+    private val _selectedExercisePerformance = MutableStateFlow<ExercisePerformanceDisplay?>(null)
+    val selectedExercisePerformance: StateFlow<ExercisePerformanceDisplay?> = _selectedExercisePerformance.asStateFlow()
 
     private val _showAddDialog = MutableStateFlow(false)
     val showAddDialog: StateFlow<Boolean> = _showAddDialog.asStateFlow()
@@ -106,7 +106,7 @@ class CalendarViewModel(
     }
 
     fun selectExercise(performance: ExercisePerformanceDisplay) {
-        _selectedExercisePerformance.value = performance.performance
+        _selectedExercisePerformance.value = performance
     }
 
     fun clearSelectedExercise() {
@@ -130,14 +130,6 @@ class CalendarViewModel(
         viewModelScope.launch {
             runCatching {
                 val token = UserSession.token ?: throw Exception("Brak tokena")
-//                val calendarDay = api.getCalendarEntryByDate("Bearer $token", date)
-//                if (calendarDay.exercises.isEmpty()) {
-//                    // Nie ma wpisu na ten dzień - dodaj cały dzień
-//                    val request = ExercisePerformanceRequest(date, listOf(data))
-//                    api.addCalendarDay("Bearer $token", request)
-//                } else {
-//                    // Istnieje dzień - dodaj ćwiczenie do istniejącego wpisu
-//                    val calendarDayId = calendarDay.id
                     api.addExerciseToCalendarByDate("Bearer $token", date, exercisePerformance)
 //                }
             }.onSuccess {
