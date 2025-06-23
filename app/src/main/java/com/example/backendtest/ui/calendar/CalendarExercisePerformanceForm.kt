@@ -29,7 +29,6 @@ fun CalendarExercisePerformanceForm(
     val exerciseList by viewModel.exerciseList.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
 
-    // Ustawienia lokalne pola formularza (stateful)
     var selectedExerciseId by remember { mutableStateOf(exercisePerformance?.exercise_id ?: viewModel.newPerformanceExerciseId.value ?: "") }
     var durationMin by remember { mutableStateOf(exercisePerformance?.duration_min?.toString() ?: "") }
     var numberOfSets by remember { mutableStateOf(exercisePerformance?.numberOfSets?.toString() ?: "") }
@@ -39,12 +38,10 @@ fun CalendarExercisePerformanceForm(
     var notes by remember { mutableStateOf(exercisePerformance?.notes ?: "") }
     var done by remember { mutableStateOf(exercisePerformance?.done ?: false) }
 
-    // Dropdown
     var expanded by remember { mutableStateOf(false) }
     val selectedExerciseName = exerciseList.find { it.id == selectedExerciseId }?.name ?: "Wybierz ćwiczenie"
 
     val isEditMode = exercisePerformance != null
-    val title = if (isEditMode) "Edytuj ćwiczenie" else "Zaplanuj ćwiczenie"
 
     Column(
         modifier = Modifier
@@ -52,9 +49,10 @@ fun CalendarExercisePerformanceForm(
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        Text(title, style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(16.dp))
+        HeaderText(if (isEditMode) "Edytuj ćwiczenie" else "Zaplanuj ćwiczenie")
+        Spacer(modifier = Modifier.height(8.dp))
 
+        // Dropdown wyboru ćwiczenia
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded }
@@ -65,9 +63,11 @@ fun CalendarExercisePerformanceForm(
                 readOnly = true,
                 label = { Text("Ćwiczenie") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor()
             )
-            ExposedDropdownMenu(
+            DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
@@ -83,52 +83,57 @@ fun CalendarExercisePerformanceForm(
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = durationMin,
-            onValueChange = { durationMin = it.filter { c -> c.isDigit() } },
-            label = { Text("Czas trwania (minuty)") },
+            onValueChange = { durationMin = it.filter(Char::isDigit) },
+            label = { Text("Czas trwania (min)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = numberOfSets,
-            onValueChange = { numberOfSets = it.filter { c -> c.isDigit() } },
+            onValueChange = { numberOfSets = it.filter(Char::isDigit) },
             label = { Text("Liczba serii") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = numberOfRepetitions,
-            onValueChange = { numberOfRepetitions = it.filter { c -> c.isDigit() } },
+            onValueChange = { numberOfRepetitions = it.filter(Char::isDigit) },
             label = { Text("Powtórzenia w serii") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = weight,
-            onValueChange = { weight = it.filter { c -> c.isDigit() } },
+            onValueChange = { weight = it.filter { c -> c.isDigit() || c == '.' } },
             label = { Text("Ciężar (kg)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = intervalDays,
-            onValueChange = { intervalDays = it.filter { c -> c.isDigit() } },
+            onValueChange = { intervalDays = it.filter(Char::isDigit) },
             label = { Text("Interwał (dni)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = notes,
@@ -139,27 +144,31 @@ fun CalendarExercisePerformanceForm(
                 .height(100.dp),
             maxLines = 5
         )
-        Spacer(Modifier.height(8.dp))
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(
                 checked = done,
                 onCheckedChange = { done = it }
             )
-            Spacer(Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text("Wykonano")
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Row {
+        // Przyciski
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
             Button(
-                modifier = Modifier.weight(1f),
                 onClick = {
                     if (selectedExerciseId.isBlank()) return@Button
 
                     val data = ExercisePerformanceData(
-                        id = exercisePerformance?.id ?: "",  // puste id jeśli nowy
+                        id = exercisePerformance?.id ?: "",
                         exercise_id = selectedExerciseId,
                         duration_min = durationMin.toIntOrNull() ?: 0,
                         numberOfSets = numberOfSets.toIntOrNull() ?: 0,
@@ -174,23 +183,28 @@ fun CalendarExercisePerformanceForm(
                     } else {
                         viewModel.addExerciseToCalendar(data, selectedDate)
                     }
-                }
+                    onDismiss()
+                },
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Zapisz")
             }
-            Spacer(Modifier.width(16.dp))
+
+            Spacer(modifier = Modifier.width(16.dp))
+
             Button(
-                modifier = Modifier.weight(1f),
                 onClick = {
                     viewModel.clearSelectedExercise()
                     onDismiss()
-                }
+                },
+                modifier = Modifier.weight(1f)
             ) {
                 Text("Anuluj")
             }
         }
     }
 }
+
 
 
 //@Preview(showBackground = true, widthDp = 360, heightDp = 640)

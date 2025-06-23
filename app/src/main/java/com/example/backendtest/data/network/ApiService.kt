@@ -92,6 +92,13 @@ interface ApiService {
     @PUT("/calendar/{calendar_id}/exercise/{exercise_id}")
     suspend fun updateExerciseInCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Body body: ExercisePerformanceData, @Path("calendar_id") id: String, @Path("exercise_id") exerciseId: String):ExercisePerformance
 
+    @POST("/calendar/date/{date}/exercise")
+    suspend fun addExerciseToCalendarByDate(
+        @Header("Authorization") authHeader: String,
+        @Path("date") date: LocalDate,
+        @Body body: ExercisePerformanceData
+    ): ExercisePerformance
+
     @POST("/calendar/{calendar_id}/exercise")
     suspend fun addExerciseToCalendarEntryByCalendarId(@Header("Authorization") authHeader: String, @Body body: ExercisePerformanceData, @Path("calendar_id") id: String):ExercisePerformance
 

@@ -126,20 +126,20 @@ class CalendarViewModel(
         _newPerformanceExerciseId.value = exerciseId
     }
 
-    fun addExerciseToCalendar(data: ExercisePerformanceData, date: LocalDate) {
+    fun addExerciseToCalendar(exercisePerformance: ExercisePerformanceData, date: LocalDate) {
         viewModelScope.launch {
             runCatching {
                 val token = UserSession.token ?: throw Exception("Brak tokena")
-                val calendarDay = api.getCalendarEntryByDate("Bearer $token", date)
-                if (calendarDay.exercises.isEmpty()) {
-                    // Nie ma wpisu na ten dzień - dodaj cały dzień
-                    val request = ExercisePerformanceRequest(date, listOf(data))
-                    api.addCalendarDay("Bearer $token", request)
-                } else {
-                    // Istnieje dzień - dodaj ćwiczenie do istniejącego wpisu
-                    val calendarDayId = calendarDay.id
-                    api.addExerciseToCalendarEntryByCalendarId("Bearer $token", data, calendarDayId)
-                }
+//                val calendarDay = api.getCalendarEntryByDate("Bearer $token", date)
+//                if (calendarDay.exercises.isEmpty()) {
+//                    // Nie ma wpisu na ten dzień - dodaj cały dzień
+//                    val request = ExercisePerformanceRequest(date, listOf(data))
+//                    api.addCalendarDay("Bearer $token", request)
+//                } else {
+//                    // Istnieje dzień - dodaj ćwiczenie do istniejącego wpisu
+//                    val calendarDayId = calendarDay.id
+                    api.addExerciseToCalendarByDate("Bearer $token", date, exercisePerformance)
+//                }
             }.onSuccess {
                 fetchCalendarEntriesForDate(date)
                 closeAddDialog()
