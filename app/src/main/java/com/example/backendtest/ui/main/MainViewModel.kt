@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.backendtest.SharedPreferencesManager
 import com.example.backendtest.StepSensorManager
 import com.example.backendtest.data.network.ApiService
+import com.example.backendtest.data.network.StepHistoryEntry
 import com.example.backendtest.data.network.UpdateStepsRequest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
@@ -30,6 +31,13 @@ class MainViewModel(
     private val _dailyGoal = MutableStateFlow(10000)
     val dailyGoal: StateFlow<Int> = _dailyGoal.asStateFlow()
 
+    private val _stepsHistory = MutableStateFlow<List<StepHistoryEntry>>(emptyList())
+    val stepsHistory: StateFlow<List<StepHistoryEntry>> = _stepsHistory.asStateFlow()
+
+    private val _stepsHistoryState = MutableStateFlow<StepsHistoryState>(StepsHistoryState.Loading)
+    val stepsHistoryState: StateFlow<StepsHistoryState> = _stepsHistoryState.asStateFlow()
+
+
     private var initialStepsFromApi: Int = 0
 
     private var pendingSteps: Int? = null
@@ -38,6 +46,7 @@ class MainViewModel(
         loadDailySteps()
         observeSteps()
         startPeriodicUpdateJob()
+        loadStepsHistory()
     }
     private fun loadDailySteps() {
         viewModelScope.launch {
@@ -87,6 +96,19 @@ class MainViewModel(
         }
     }
 
+    fun loadStepsHistory() {
+        viewModelScope.launch {
+            _stepsHistoryState.value = StepsHistoryState.Loading
+            try {
+                val history = api.getStepsHistory()
+                val sorted = history.sortedBy { it.date }
+                _stepsHistoryState.value = StepsHistoryState.Success(sorted)
+            } catch (e: Exception) {
+                _stepsHistoryState.value = StepsHistoryState.Error("Nie udało się pobrać historii")
+            }
+        }
+    }
+
 }
 
 
@@ -94,6 +116,12 @@ sealed class StepsState {
     object Loading : StepsState()
     object Success : StepsState()
     data class Error(val message: String) : StepsState()
+}
+
+sealed class StepsHistoryState {
+    object Loading : StepsHistoryState()
+    data class Success(val history: List<StepHistoryEntry>) : StepsHistoryState()
+    data class Error(val message: String) : StepsHistoryState()
 }
 
 // Factory dla MainViewModel

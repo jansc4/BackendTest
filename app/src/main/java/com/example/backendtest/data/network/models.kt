@@ -26,7 +26,7 @@ data class TokenResponse(
 )
 
 
-data class StepsHistoryResponse(
+data class StepHistoryEntry(
     val steps: Int,
     val date: String  // ISO 8601 format
 )

@@ -42,9 +42,8 @@ interface ApiService {
     @PUT("steps/today")
     suspend fun updateSteps(@Body request: UpdateStepsRequest): UpdateStepsResponse
 
-
     @GET("steps/history")
-    suspend fun getStepsHistory(): List<StepsHistoryResponse>
+    suspend fun getStepsHistory(): List<StepHistoryEntry>
 
     @GET("calendar")
     suspend fun getAllCalendarEntries(): List<CalendarEntry>
