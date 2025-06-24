@@ -30,6 +30,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
+import com.example.backendtest.R
+import androidx.compose.foundation.layout.size
 
 @Composable
 fun LoginScreen(
@@ -55,6 +60,22 @@ fun LoginScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.Center
     ) {
+        // Ikona aplikacji
+        Image(
+            painter = painterResource(id = R.mipmap.logo_foreground),
+            contentDescription = "Logo aplikacji",
+            modifier = Modifier
+                .size(100.dp)
+                .padding(bottom = 8.dp)
+        )
+
+        // Nazwa aplikacji
+        Text(
+            text = "Krokomierz",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
